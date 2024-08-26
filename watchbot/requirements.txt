@@ -1,0 +1,4 @@
+python-telegram-bot[rate-limiter]==21.1.1
+PyYAML==6.0
+python-dotenv==0.21.0
+charade==1.0.3

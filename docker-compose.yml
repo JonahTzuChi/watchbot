@@ -1,0 +1,18 @@
+version: "3.8"
+
+services:
+    watcher:
+        container_name: watch_dev
+        build: ./watchbot
+        restart: always
+        command: python3 src/main.py
+        env_file:
+            - ./config.env
+        volumes:
+            - "./storage:/file:rw"
+        deploy:
+            resources:
+                limits:
+                    cpus: "4"
+                    memory: 4096M
+# END
