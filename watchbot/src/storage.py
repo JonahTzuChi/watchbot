@@ -123,9 +123,14 @@ class SQLite3_Storage(Storage):
             if os.path.exists(db_path):
                 os.remove(db_path)
         conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
-        cursor.execute(f"CREATE TABLE IF NOT EXISTS {table_name} (key TEXT PRIMARY KEY, value TEXT)")
-        conn.commit()
+        try:
+            cursor = conn.cursor()
+            cursor.execute(f"CREATE TABLE IF NOT EXISTS {table_name} (key TEXT PRIMARY KEY, value TEXT)")
+            conn.commit()
+        except sqlite3.Error as e:
+            raise e
+        finally:
+            conn.close()
 
     @classmethod
     def validate_db_path(cls, db_path: str):
@@ -160,12 +165,17 @@ class SQLite3_Storage(Storage):
         Any: The value associated with the given key, or None if the key does not exist.
         """
         conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        cursor.execute(f"SELECT value FROM {self.table_name} WHERE key=?", (key,))
-        result = cursor.fetchone()
-        if result:
-            return json.loads(result[0])
-        return None
+        try:
+            cursor = conn.cursor()
+            cursor.execute(f"SELECT value FROM {self.table_name} WHERE key=?", (key,))
+            result = cursor.fetchone()
+            if result:
+                return json.loads(result[0])
+            return None
+        except sqlite3.Error as e:
+            raise e
+        finally:
+            conn.close()
 
     def set(self, key: str, value: Any):
         """
@@ -176,10 +186,15 @@ class SQLite3_Storage(Storage):
         value (Any): The value to set.
         """
         conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        cursor.execute(f"INSERT OR REPLACE INTO {self.table_name} (key, value) VALUES (?, ?)",
-                       (key, json.dumps(value)))
-        conn.commit()
+        try:
+            cursor = conn.cursor()
+            cursor.execute(f"INSERT OR REPLACE INTO {self.table_name} (key, value) VALUES (?, ?)",
+                        (key, json.dumps(value)))
+            conn.commit()
+        except sqlite3.Error as e:
+            raise e
+        finally:
+            conn.close()
 
     def drop(self, key: str):
         """
@@ -189,18 +204,28 @@ class SQLite3_Storage(Storage):
         key (str): The key to delete the value for.
         """
         conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        cursor.execute(f"DELETE FROM {self.table_name} WHERE key=?", (key,))
-        conn.commit()
+        try:
+            cursor = conn.cursor()
+            cursor.execute(f"DELETE FROM {self.table_name} WHERE key=?", (key,))
+            conn.commit()
+        except sqlite3.Error as e:
+            raise e
+        finally:
+            conn.close()
 
     def clear(self):
         """
         Deletes all key-value pairs from the SQLite3 database.
         """
         conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        cursor.execute(f"DELETE FROM {self.table_name}")
-        conn.commit()
+        try:
+            cursor = conn.cursor()
+            cursor.execute(f"DELETE FROM {self.table_name}")
+            conn.commit()
+        except sqlite3.Error as e:
+            raise e
+        finally:
+            conn.close()
 
     def keys(self) -> list[str]:
         """
@@ -210,6 +235,12 @@ class SQLite3_Storage(Storage):
         list[str]: A list of all keys in the SQLite3 database.
         """
         conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        cursor.execute(f"SELECT key FROM {self.table_name}")
-        return [row[0] for row in cursor.fetchall()]
+        try:
+            cursor = conn.cursor()
+            cursor.execute(f"SELECT key FROM {self.table_name}")
+            return [row[0] for row in cursor.fetchall()]
+        except sqlite3.Error as e:
+            raise e
+        finally:
+            conn.close()
+# END
