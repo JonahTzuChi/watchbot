@@ -72,7 +72,10 @@ async def retrieve_via_forward(update: Update, context: CallbackContext) -> None
             storage.set(key, result)
             logger.error(f"Failed to forward message({key}): {bad_request}")
     
-    export_path = f"/file/{chatid}_{int(time())}.csv"
+    if update.message.chat.title:
+        export_path = f"/file/{update.message.chat.title}_{int(time())}.csv"
+    else:
+        export_path = f"/file/{update.message.chat.id}_{int(time())}.csv"
     storage.export_csv(export_path)
     await update.message.reply_document(export_path, parse_mode=ParseMode.HTML)
 
@@ -92,8 +95,10 @@ async def retrieve_via_copy(update: Update, context: CallbackContext) -> None:
             result['deleted'] = True
             storage.set(key, result)
             logger.error(f"Failed to copy message({key}): {bad_request}")
-    
-    export_path = f"/file/{chatid}_{int(time())}.csv"
+    if update.message.chat.title:
+        export_path = f"/file/{update.message.chat.title}_{int(time())}.csv"
+    else:
+        export_path = f"/file/{update.message.chat.id}_{int(time())}.csv"
     storage.export_csv(export_path)
     await update.message.reply_document(export_path, parse_mode=ParseMode.HTML)
 
