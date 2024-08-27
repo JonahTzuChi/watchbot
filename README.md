@@ -1,8 +1,8 @@
 # watchbot
-A chat bot developed to record every conversation within the chat group.
+A chat bot developed to record every conversation within the chat group using [python-telegram-bot](https://github.com/python-telegram-bot/python-telegram-bot).
 
 # Keywords
-telegram, chat group, monitoring, watching, delete message, synchronization
+telegram, chat bot, chat group, monitoring, watching, delete message, synchronization
 
 # What is the main issue this bot trying to address?
 At the point of writing, Telegram does not notify the Bot when a user delete a message. As result, the Bot's knowledge is not synchronized with the chat group it is monitoring.
