@@ -2,6 +2,7 @@ import json
 import os
 import re
 import sqlite3
+import csv
 from typing import Any
 from abc import ABC, abstractmethod
 
@@ -243,4 +244,20 @@ class SQLite3_Storage(Storage):
             raise e
         finally:
             conn.close()
+            
+    def export_csv(self, filename: str) -> None:
+        assert filename[-4:] == ".csv"
+        conn = sqlite3.connect(self.db_path)
+        try:
+            cursor = conn.cursor()
+            cursor.execute(f"SELECT key, value FROM {self.table_name}")
+            with open(filename, 'w', newline='') as csvfile:
+                writer = csv.writer(csvfile, delimiter=',')
+                writer.writerow([i[0] for i in cursor.description])
+                writer.writerows(cursor)
+        except sqlite3.Error as e:
+            raise e
+        finally:
+            conn.close()
+
 # END
