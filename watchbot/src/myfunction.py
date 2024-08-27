@@ -1,9 +1,10 @@
 import logging
 import os
-
+from time import time
 import telegram
 from telegram import Message, Update
 from telegram.ext import CallbackContext
+from telegram.constants import ParseMode
 from typing import Optional
 from storage import SQLite3_Storage
 from model import CompactMessage
@@ -11,8 +12,6 @@ from model import CompactMessage
 logger = logging.getLogger(__name__)
 master = os.getenv("MASTER_TLG_ID", 0)
 assert master != 0
-
-storage = SQLite3_Storage(f"/file/memory.db", overwrite=True)
 
 
 def extract_text_message(message: Message, edited: bool = False) -> CompactMessage:
@@ -37,9 +36,11 @@ async def middleware_function(update: Update, context: CallbackContext) -> None:
     edited_message: Optional[telegram.EditedMessage] = getattr(update, "edited_message", None)
     if message:
         conversation = extract_text_message(message, False)
+        storage = SQLite3_Storage(f"/file/{conversation.chatid}.db", overwrite=False)
         storage.set(conversation.identifier, conversation.to_dict())
     elif edited_message:
         conversation = extract_text_message(edited_message, True)
+        storage = SQLite3_Storage(f"/file/{conversation.chatid}.db", overwrite=False)
         storage.set(conversation.identifier, conversation.to_dict())
     else:
         logger.error(f"\nException => Update: {update}")
@@ -50,40 +51,51 @@ async def error_handler(update: object, context: CallbackContext):
     logger.error(msg="Update: ", exc_info=str(update))
 
 
+def to_display(data: dict) -> str:
+    assert not data['deleted']
+    return f"\n<strong>{data['username']}</strong> => [{data['text']}]@{data['lastUpdated']}" + (" (edited)" if data['edited'] else "")
+
+
 async def retrieve_via_forward(update: Update, context: CallbackContext) -> None:
     chatid = update.message.chat.id
+    storage = SQLite3_Storage(f"/file/{chatid}.db", overwrite=False)
     keys = storage.keys()
     keys = list(filter(lambda x: x.startswith(f"{chatid}/"), keys))
-    result_string = "===== BEG ===="
     for key in keys:
         try:
             result = storage.get(key)
             # Challenge the existence of a message
             _ = await context.bot.forward_message(chat_id=master, message_id=result['message_id'], from_chat_id=result['chatid'], disable_notification=True)
-            result_string += f"\n@{result['lastUpdated']} => {result['text']}"
         except telegram.error.BadRequest as bad_request:
             # Message has been deleted
+            result['deleted'] = True
+            storage.set(key, result)
             logger.error(f"Failed to forward message({key}): {bad_request}")
-    result_string += "\n===== END ===="
-    await update.message.reply_text(result_string)
+    
+    export_path = f"/file/{chatid}_{int(time())}.csv"
+    storage.export_csv(export_path)
+    await update.message.reply_document(export_path, parse_mode=ParseMode.HTML)
 
 
 async def retrieve_via_copy(update: Update, context: CallbackContext) -> None:
     chatid = update.message.chat.id
+    storage = SQLite3_Storage(f"/file/{chatid}.db", overwrite=False)
     keys = storage.keys()
     keys = list(filter(lambda x: x.startswith(f"{chatid}/"), keys))
-    result_string = "===== BEG ====="
     for key in keys:
         try:
             result = storage.get(key)
             # Challenge the existence of a message
             _ = await context.bot.copy_message(chat_id=master, message_id=result['message_id'], from_chat_id=result['chatid'])
-            result_string += f"\n@{result['lastUpdated']} => {result['text']}"
         except telegram.error.BadRequest as bad_request:
             # Message has been deleted
-            logger.error(f"Failed to forward message({key}): {bad_request}")
-    result_string += "\n===== END ====="
-    await update.message.reply_text(result_string)
+            result['deleted'] = True
+            storage.set(key, result)
+            logger.error(f"Failed to copy message({key}): {bad_request}")
+    
+    export_path = f"/file/{chatid}_{int(time())}.csv"
+    storage.export_csv(export_path)
+    await update.message.reply_document(export_path, parse_mode=ParseMode.HTML)
 
 
 async def help_handler(update: Update, context: CallbackContext) -> None:
