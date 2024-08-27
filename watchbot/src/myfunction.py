@@ -50,7 +50,7 @@ async def error_handler(update: object, context: CallbackContext):
     logger.error(msg="Update: ", exc_info=str(update))
 
 
-async def retrieve_handler(update: Update, context: CallbackContext) -> None:
+async def retrieve_via_forward(update: Update, context: CallbackContext) -> None:
     chatid = update.message.chat.id
     keys = storage.keys()
     keys = list(filter(lambda x: x.startswith(f"{chatid}/"), keys))
