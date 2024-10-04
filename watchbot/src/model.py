@@ -22,16 +22,21 @@ class Media:
 @dataclass
 class CompactMessage:
     identifier: str
-    text: str
+    text: Optional[str]
     chattype: str
     chatid: int
     chatname: str
-    userid: int
-    username: str
+    userid: Optional[int]
+    username: Optional[str]
     message_id: int
+    created: Optional[str]
     lastUpdated: str
     edited: bool = False
     deleted: bool = False
+    isForwarded: bool = False
+    author: Optional[str] = None
+    isBot: bool = False
+    media: Optional[Media] = None
     
     def __str__(self):
         output = f"{self.username}@{self.chatname}\n\n{self.text}\n\n@{self.lastUpdated}"
@@ -39,6 +44,8 @@ class CompactMessage:
             output += " (deleted)"
         elif self.edited:
             output += " (edited)"
+        if self.isForwarded:
+            output += f"\n\nForwarded from {self.author}"
         return output
     
     def to_dict(self):
