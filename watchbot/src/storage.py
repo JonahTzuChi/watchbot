@@ -190,7 +190,9 @@ class SQLite3_Storage(Storage):
         try:
             cursor = conn.cursor()
             cursor.execute(f"INSERT OR REPLACE INTO {self.table_name} (key, value) VALUES (?, ?)",
-                        (key, json.dumps(value)))
+                        (key, json.dumps(value, ensure_ascii=False))) 
+            # ensure_ascii = False to support non-ascii characters
+            # sqlite3 support utf-8 by default without further configuration
             conn.commit()
         except sqlite3.Error as e:
             raise e
@@ -251,7 +253,7 @@ class SQLite3_Storage(Storage):
         try:
             cursor = conn.cursor()
             cursor.execute(f"SELECT key, value FROM {self.table_name}")
-            with open(filename, 'w', newline='') as csvfile:
+            with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
                 writer = csv.writer(csvfile, delimiter=',')
                 writer.writerow([i[0] for i in cursor.description])
                 writer.writerows(cursor)
