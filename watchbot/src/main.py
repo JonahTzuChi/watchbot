@@ -26,8 +26,9 @@ logger = logging.getLogger(__name__)
 
 def run_bot(bot: Application) -> None:
     bot.add_handler(MessageHandler(filters.ALL, myfunction.middleware_function), group=0)
-    bot.add_handler(CommandHandler("retrieve_via_forward", myfunction.retrieve_via_forward), group=1)
-    bot.add_handler(CommandHandler("retrieve_via_copy", myfunction.retrieve_via_copy), group=1)
+    # bot.add_handler(CommandHandler("retrieve_via_forward", myfunction.retrieve_via_forward), group=1)
+    # bot.add_handler(CommandHandler("retrieve_via_copy", myfunction.retrieve_via_copy), group=1)
+    bot.add_handler(CommandHandler("export", myfunction.export_handler), group=1)
     bot.add_handler(CommandHandler("help", myfunction.help_handler), group=1)
     bot.add_error_handler(myfunction.error_handler)
     bot.run_polling(poll_interval=0)
