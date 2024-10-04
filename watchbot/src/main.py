@@ -117,7 +117,7 @@ if __name__ == "__main__":
             run_bot(application)
             break
         except telegram.error.TimedOut as error:
-            logger.error(f"{type(error).name}: {str(error)}")
+            logger.error(f"{type(error)}: {str(error)}")  # AttributeError: type object 'TimedOut' has no attribute 'name'
             # Update timeout
             timeout_factor = update_timeout_factor(timeout_factor)
             (
